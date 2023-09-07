@@ -1,0 +1,31 @@
+:root {
+    --primary-color-gradient: linear-gradient(to right, #EE4A8B, #FAAA49);
+    --primary-color-one: #EE4A8B;
+    --primary-color-two: #FAAA49;
+    --light-color: #FFFFFF;
+    --middle-color: #7D7D7D;
+    --dark-color: #343336;
+}
+
+.clear {
+    background: transparent;
+    border: none;
+    color: white;
+}
+
+.solid {
+    background: var(--light-color);
+    border: none;
+    color: var(--primary-color-two);
+}
+
+.outline {
+    background: transparent;
+    color: var(--light-color);
+    border: 1px solid var(--light-color);
+}
+
+form {
+    width: 25vw;
+    min-width: 280px;
+}
