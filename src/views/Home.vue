@@ -1,15 +1,15 @@
 <template>
   <div class="home">
-    <h1>Welcome to <span>EVENTHUB</span></h1>
+    <h1>Welcome to <span>EventHub</span></h1>
     <p>Here you can schedule your events, connect with friends and organize your time!</p>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'HomeView',
-  components: {
-  }
+  name: 'Home',
+
+
 }
 </script>
 
@@ -17,6 +17,12 @@ export default {
 .home {
   text-align: center;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 90vh;
+  background: var(--primary-color-gradient);
 }
 
 h1 {
@@ -31,7 +37,7 @@ p {
 
 span {
   font-weight: bold;
-  color: var(--primary-color-two);
+  color: var(--primary-color-one);
   font-size: 80px;
   margin-bottom: 20px;
 }

@@ -8,20 +8,54 @@
                 <router-link to="/contacts">Contacts</router-link>
                 <router-link to="/user">Profile</router-link>
             </div>
-            <div class="auth">
+            <div v-if="!$store.state.user" class="auth">
                 <router-link to="/login">Login</router-link>
                 <router-link to="/register">Register</router-link>
             </div>
-          </nav>
+            <div v-else class="auth">
+                <div class="avatar" @click="setUserModal">
+                    <v-avatar color="#FAAA49" size="50">
+                        <img v-if="profileImage" :src="profileImage" alt="Profile Photo" />
+                        <v-icon v-else dark size="50">
+                            mdi-account-circle
+                        </v-icon>
+                    </v-avatar>
+                    <p>Hello, {{ $store.state.user.name }}!</p>
+                </div>
+                <div v-if="userModal" @click="logout" class="logout-dropDown">
+                    Logout
+                </div>
+            </div>
+        </nav>
     </div>
 </template>
 
 <script>
-export default {
-    setup () {
-        
+import Cookies from 'js-cookie';
 
-        return {}
+export default {
+    name: 'Navbar',
+    data() {
+        return {
+            userModal: false,   
+        }
+    },
+    methods: {
+        logout() {
+            Cookies.remove('auth');
+            this.$store.commit('setUser', '');
+            this.$router.push('/');
+        },
+        setUserModal() {
+            this.userModal = !this.userModal;
+        }
+    },
+    created() {
+        const auth = Cookies.get('auth');
+        if (auth) {
+            const user = JSON.parse(auth);
+            this.$store.commit('setUser', user);
+        }
     }
 }
 </script>
@@ -69,5 +103,29 @@ nav a.router-link-exact-active {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+}
+
+.avatar p {
+    margin-top: 5px;
+}
+
+.logout-dropDown {
+    cursor: pointer;
+    background-color: white;
+    color: black;
+    padding: 30px 20px;
+    border-radius: 15px;
+    position: absolute;
+    top: 80px;
+    right: 35px;
 }
 </style>

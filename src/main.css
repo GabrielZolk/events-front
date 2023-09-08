@@ -16,12 +16,12 @@
 .solid {
     background: var(--light-color);
     border: none;
-    color: var(--primary-color-two);
+    color: var(--primary-color-two) !important;
 }
 
 .outline {
     background: transparent;
-    color: var(--light-color);
+    color: var(--light-color) !important;
     border: 1px solid var(--light-color);
 }
 
