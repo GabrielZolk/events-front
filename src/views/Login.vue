@@ -40,33 +40,40 @@ export default {
     },
     methods: {
         async login() {
-      try {
-        const response = await axios.post('/login', {
-          email: this.email,
-          password: this.password,
-        });
-        const token = response.data.token;
-        const user = response.data.user;
+            try {
+                if (!this.email || !this.password) {
+                    this.error = 'All fields are required';
+                    return;
+                }
 
-        const userData = {
-          name: user.name,
-          email: user.userEmail,
-          id: user.id,
-          token,
-        }
-        if(token) {
-            Cookies.set('auth', JSON.stringify(userData), { expires: 7 });
-            this.$store.commit('setToken', token);
-            this.$store.commit('setUser', user);
-            this.$router.push('/');
-        }
-        this.error = 'Wrong email or password'
-      } catch (error) {
-        this.error = 'Internal error'
-      }
-    },
+                const response = await axios.post('/login', {
+                    email: this.email,
+                    password: this.password,
+                });
+                const token = response.data.token;
+                const user = response.data.user;
+
+                const userData = {
+                    id: user ? user.id : null,
+                    name: user ? user.name : null,
+                    email: user ? user.userEmail : null,
+                    token,
+                }
+
+                if (token) {
+                    Cookies.set('auth', JSON.stringify(userData), { expires: 7 });
+                    this.$store.commit('setToken', token);
+                    this.$store.commit('setUser', user);
+                    this.$router.push('/');
+                }
+                this.error = 'Wrong email or password';
+            } catch (error) {
+                this.error = 'Internal error';
+                console.log(error)
+            }
+        },
     }
-}
+};
 </script>
 
 <style scoped>
@@ -83,15 +90,12 @@ export default {
 .login-button {
     padding: 10px;
     margin-bottom: 10px;
+    cursor: pointer;
     width: -webkit-fill-available;
 }
 
 .login-input {
     border: 2px solid white;
-}
-
-.login-button {
-    cursor: pointer;
 }
 
 .login-button:active {

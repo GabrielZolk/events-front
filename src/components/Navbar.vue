@@ -8,7 +8,7 @@
                 <router-link to="/contacts">Contacts</router-link>
                 <router-link to="/user">Profile</router-link>
             </div>
-            <div v-if="!$store.state.user" class="auth">
+            <div v-if="!$store.state.user.name" class="auth">
                 <router-link to="/login">Login</router-link>
                 <router-link to="/register">Register</router-link>
             </div>
@@ -37,14 +37,15 @@ export default {
     name: 'Navbar',
     data() {
         return {
-            userModal: false,   
+            userModal: false,
+            profileImage: null,  
         }
     },
     methods: {
         logout() {
             Cookies.remove('auth');
             this.$store.commit('setUser', '');
-            this.$router.push('/');
+            this.$router.push('/login');
         },
         setUserModal() {
             this.userModal = !this.userModal;
@@ -126,6 +127,6 @@ nav a.router-link-exact-active {
     border-radius: 15px;
     position: absolute;
     top: 80px;
-    right: 35px;
+    right: 40px;
 }
 </style>

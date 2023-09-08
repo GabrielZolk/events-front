@@ -2,14 +2,20 @@
   <div class="home">
     <h1>Welcome to <span>EventHub</span></h1>
     <p>Here you can schedule your events, connect with friends and organize your time!</p>
+    <div v-if="!$store.state.user.name" class="auth">
+      <router-link to="/login">
+        <button type='button' class='solid login-button'>Login</button>
+      </router-link>
+      <router-link to="/register">
+        <button type='button' class='outline login-button'>Register</button>
+      </router-link>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: 'Home',
-
-
 }
 </script>
 
@@ -42,8 +48,11 @@ span {
   margin-bottom: 20px;
 }
 
-h1, p {
+h1,
+
+p {
   color: var(--dark-color);
   font-size: 60px;
 }
+
 </style>

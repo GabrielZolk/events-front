@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import Cookies from 'js-cookie';
 
 import Home from '../views/Home.vue'
 import Contacts from '../views/Contacts.vue'
@@ -10,6 +11,11 @@ import Events from '../views/Events.vue'
 
 Vue.use(VueRouter)
 
+function authVerify() {
+    const token = Cookies.get('auth');
+    return !!token;
+}
+
 const routes = [
   {
     path: '/',
@@ -19,27 +25,48 @@ const routes = [
   {
     path: '/contacts',
     name: 'contacts',
-    component: Contacts
+    component: Contacts,
+    beforeEnter: (to, from, next) => {
+      if (authVerify()) {
+          next();
+      } else {
+          next('/login');
+      }
+  }
   },
   {
     path: '/register',
     name: 'register',
-    component: Register
+    component: Register,
   },
   {
     path: '/login',
     name: 'login',
-    component: Login
+    component: Login,
   },
   {
     path: '/user',
     name: 'user',
-    component: User
+    component: User,
+    beforeEnter: (to, from, next) => {
+      if (authVerify()) {
+          next();
+      } else {
+          next('/login');
+      }
+  }
   },
   {
     path: '/events',
     name: 'events',
-    component: Events
+    component: Events,
+    beforeEnter: (to, from, next) => {
+        if (authVerify()) {
+            next();
+        } else {
+            next('/login');
+        }
+    }
   },
 ]
 

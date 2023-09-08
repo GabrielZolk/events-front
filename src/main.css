@@ -29,3 +29,10 @@ form {
     width: 25vw;
     min-width: 280px;
 }
+
+.login-button {
+    padding: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    width: -webkit-fill-available;
+}
