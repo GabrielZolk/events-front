@@ -15,7 +15,7 @@
             <div v-else class="auth">
                 <div class="avatar" @click="setUserModal">
                     <v-avatar color="#FAAA49" size="50">
-                        <img v-if="profileImage" :src="profileImage" alt="Profile Photo" />
+                        <img v-if="$store.state.imageBase64" :src="$store.state.imageBase64" alt="Profile Photo" />
                         <v-icon v-else dark size="50">
                             mdi-account-circle
                         </v-icon>
@@ -38,7 +38,7 @@ export default {
     data() {
         return {
             userModal: false,
-            profileImage: null,  
+            profileImage: '',  
         }
     },
     methods: {

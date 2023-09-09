@@ -7,12 +7,12 @@
                         <template v-slot:prepend>
                             <v-list-item two-line class="px-2">
                                 <v-list-item-avatar>
-                                    <img src="https://randomuser.me/api/portraits/women/81.jpg">
+                                    <img :src="profileImage">
                                 </v-list-item-avatar>
 
                                 <v-list-item-content>
-                                    <v-list-item-title>Jane Smith</v-list-item-title>
-                                    <v-list-item-subtitle>Logged In</v-list-item-subtitle>
+                                    <v-list-item-title>{{ userData.name }}</v-list-item-title>
+                                    <v-list-item-subtitle>Online</v-list-item-subtitle>
                                 </v-list-item-content>
                             </v-list-item>
                         </template>
@@ -48,11 +48,15 @@
                     <v-row align="center">
                         <v-col v-if="currentTab === 'account'" class="text-center">
                             <v-avatar color="#FAAA49" size="150">
-                                <img v-if="profileImage" :src="profileImage" alt="Profile Photo" />
-                                <v-icon v-else dark size="150" @click="openFilePicker">
+                                <img v-if="profileImage" :src="profileImage" alt="Profile Photo"
+                                    style="position: relative;" />
+                                <v-icon v-else dark size="150">
                                     mdi-account-circle
                                 </v-icon>
                             </v-avatar>
+                            <v-icon v-if="editMode" @click="openFilePicker" style="cursor: pointer; position: absolute;">
+                                mdi-pencil
+                            </v-icon>
                             <h1 class="text-center">{{ userData.name }}</h1>
                             <h1 class="text-center">{{ userData.email }}</h1>
                             <v-form ref="form" v-if="editMode">
@@ -75,17 +79,17 @@
                         </v-col>
                         <v-form ref="form" v-if="currentTab === 'security'">
                             <h1 class="mb-10">Change Password</h1>
-                            <v-text-field v-model="userData.currentPassword" label="Current password" type="password"
+                            <v-text-field v-model="currentPassword" label="Current password" type="password"
                                 required></v-text-field>
-                            <v-text-field v-model="userData.password" label="New password" type="password"
+                            <v-text-field v-model="password" label="New password" type="password" required></v-text-field>
+                            <v-text-field v-model="confirmPassword" label="Confirm new password" type="password"
                                 required></v-text-field>
-                            <v-text-field v-model="userData.confirmPassword" label="Confirm new password" type="password"
-                                required></v-text-field>
-                            <v-btn v-if="userData.currentPassword && userData.password && userData.confirmPassword" color="primary" class="mr-4"
+                            <v-btn v-if="currentPassword && password && confirmPassword" color="primary" class="mr-4"
                                 @click="changePassword">
                                 Save
                             </v-btn>
-
+                            <p style="color: rgb(252, 45, 45)">{{ error }}</p>
+                            <p style="color: rgb(2, 174, 2)">{{ message }}</p>
                         </v-form>
                     </v-row>
                 </v-col>
@@ -95,26 +99,67 @@
 </template>
   
 <script>
+import axios from '../api/axios-config';
+import Cookies from 'js-cookie';
+
 export default {
     data() {
         return {
-            profileImage: null,
+            profileImage: '',
             userData: {
                 name: "Name",
                 email: "email@example.com",
-                currentPassword: "",
-                password: "",
-                confirmPassword: "",
             },
+            currentPassword: "",
+            password: "",
+            confirmPassword: "",
             editMode: false,
             currentTab: 'account',
+            message: "",
+            error: ""
         };
+    },
+    created() {
+        const cookies = JSON.parse(Cookies.get('auth'));
+        const userId = cookies.id;
+
+        axios.get(`/users/${userId}`)
+            .then(response => {
+                this.userData.name = response.data.users[0].name;
+                this.userData.email = response.data.users[0].email;
+
+                if (response.data.users[0].profile_picture) {
+                    this.$store.commit('setImageBase64', response.data.users[0].profile_picture);
+                    this.profileImage = response.data.users[0].profile_picture;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar os dados do usuário');
+            });
     },
     methods: {
         saveProfile() {
-            console.log("Perfil salvo:", this.userData);
-            console.log("Imagem do perfil:", this.profileImage);
-            this.editMode = false;
+            const cookies = JSON.parse(Cookies.get('auth'));
+            const userId = cookies.id;
+
+            const formData = new FormData();
+
+            if (this.profileImage) {
+                formData.append('profile_picture', this.profileImage);
+            }
+
+            formData.append('id', userId);
+            formData.append('name', this.userData.name);
+            formData.append('email', this.userData.email);
+
+            axios.put('/users', formData)
+                .then(response => {
+                    this.editMode = false;
+                    console.log('Perfil atualizado com sucesso:', response.data);
+                })
+                .catch(error => {
+                    console.error('Erro ao atualizar o perfil:', error);
+                });
         },
         openFilePicker() {
             this.$refs.fileInput.click();
@@ -122,7 +167,13 @@ export default {
         handleFileUpload(event) {
             const file = event.target.files[0];
             if (file) {
-                this.profileImage = URL.createObjectURL(file);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+
+                    this.profileImage = reader.result;
+                    console.log(this.profileImage)
+                };
             }
         },
         editProfile() {
@@ -136,7 +187,35 @@ export default {
             this.currentTab = tabName;
         },
         changePassword() {
-            console.log("password changed");
+            const cookies = JSON.parse(Cookies.get('auth'));
+
+            if (this.password !== this.confirmPassword) {
+                this.error = "Passwords doesnt match";
+                return;
+            }
+
+            if (this.password === this.currentPassword) {
+                this.error = "The new password cannot be the same as the current password.";
+                return;
+            }
+
+            const data = {
+                id: cookies.id,
+                newPassword: this.password,
+                currentPassword: this.currentPassword
+            };
+
+            axios.put('/users/password', data)
+                .then(response => {
+                    if (response.data.error.includes('Failed')) {
+                        this.error = "Current password incorrect";
+                    } else {
+                        this.message = "Password updated!";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating password');
+                });
         }
     },
 };
