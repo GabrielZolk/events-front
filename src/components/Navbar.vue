@@ -15,7 +15,7 @@
             <div v-else class="auth">
                 <div class="avatar" @click="setUserModal">
                     <v-avatar color="#FAAA49" size="50">
-                        <img v-if="$store.state.imageBase64" :src="$store.state.imageBase64" alt="Profile Photo" />
+                        <img v-if="profile_picture" :src="profile_picture" alt="Profile Photo" style="object-fit: cover" />
                         <v-icon v-else dark size="50">
                             mdi-account-circle
                         </v-icon>
@@ -31,6 +31,7 @@
 </template>
 
 <script>
+import axios from '../api/axios-config';
 import Cookies from 'js-cookie';
 
 export default {
@@ -38,7 +39,7 @@ export default {
     data() {
         return {
             userModal: false,
-            profileImage: '',  
+            profile_picture: '',
         }
     },
     methods: {
@@ -56,6 +57,13 @@ export default {
         if (auth) {
             const user = JSON.parse(auth);
             this.$store.commit('setUser', user);
+
+            axios.get(`/users/${user.id}`)
+            .then(response => {
+                if (response.data.users[0].profile_picture) {
+                    this.profile_picture = response.data.users[0].profile_picture;
+                }
+            })
         }
     }
 }

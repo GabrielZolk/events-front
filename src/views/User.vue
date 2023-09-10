@@ -108,7 +108,7 @@ export default {
             profileImage: '',
             userData: {
                 name: "Name",
-                email: "email@example.com",
+                email: "Email@example.com",
             },
             currentPassword: "",
             password: "",
@@ -134,7 +134,7 @@ export default {
                 }
             })
             .catch(error => {
-                console.error('Erro ao buscar os dados do usuário');
+                console.error('Error fetching user data');
             });
     },
     methods: {
@@ -155,10 +155,9 @@ export default {
             axios.put('/users', formData)
                 .then(response => {
                     this.editMode = false;
-                    console.log('Perfil atualizado com sucesso:', response.data);
                 })
                 .catch(error => {
-                    console.error('Erro ao atualizar o perfil:', error);
+                    console.error('Error updating profile');
                 });
         },
         openFilePicker() {
@@ -181,7 +180,6 @@ export default {
         },
         cancelEdit() {
             this.editMode = false;
-
         },
         changeTab(tabName) {
             this.currentTab = tabName;
@@ -191,11 +189,13 @@ export default {
 
             if (this.password !== this.confirmPassword) {
                 this.error = "Passwords doesnt match";
+                this.message = "";
                 return;
             }
 
             if (this.password === this.currentPassword) {
                 this.error = "The new password cannot be the same as the current password.";
+                this.message = "";
                 return;
             }
 
@@ -207,14 +207,16 @@ export default {
 
             axios.put('/users/password', data)
                 .then(response => {
-                    if (response.data.error.includes('Failed')) {
+                    if (response.data.error && response.data.error.includes('Failed')) {
                         this.error = "Current password incorrect";
+                        this.message = "";
                     } else {
                         this.message = "Password updated!";
+                        this.error = ""
                     }
                 })
                 .catch(error => {
-                    console.error('Error updating password');
+                    console.error('Error updating password', error);
                 });
         }
     },
@@ -229,6 +231,10 @@ export default {
 
 .nav-btn:hover {
     background-color: rgba(0, 0, 0, 0.2);
+}
+
+img {
+    object-fit: cover;
 }
 </style>
   

@@ -10,6 +10,11 @@
         <button type='button' class='outline login-button'>Register</button>
       </router-link>
     </div>
+    <div v-else>
+      <router-link to="/events">
+        <button type='button' class='outline login-button started' style="transition: .5s;">Get Started</button>
+      </router-link>
+    </div>
   </div>
 </template>
 
@@ -53,6 +58,12 @@ h1,
 p {
   color: var(--dark-color);
   font-size: 60px;
+}
+
+.started:hover {
+  background-color: white;
+  color: black !important;
+  transition: .5s;
 }
 
 </style>
