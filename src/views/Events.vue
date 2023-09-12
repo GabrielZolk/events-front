@@ -6,10 +6,16 @@
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
         <v-select v-model="type" :items="types" dense outlined hide-details class="ma-2" label="type"></v-select>
-        <v-select v-model="mode" :items="modes" dense outlined hide-details label="event-overlap-mode"
-          class="ma-2"></v-select>
+        <!-- <v-select v-model="mode" :items="modes" dense outlined hide-details label="event-overlap-mode"
+          class="ma-2"></v-select> -->
         <v-select v-model="weekday" :items="weekdays" dense outlined hide-details label="weekdays"
           class="ma-2"></v-select>
+        <v-text-field v-model="searchQuery" label="Search"></v-text-field>
+        <v-autocomplete v-model="selectedContacts" :items="contactsFilter" label="Filter by contact" multiple chips
+        small-chips dense></v-autocomplete>
+
+      <v-autocomplete v-model="selectedTags" :items="tagsFilter" label="Filter by tag" multiple chips small-chips
+        dense></v-autocomplete>
         <v-btn icon class="ma-2 add" @click="openAddEventModal">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
@@ -20,12 +26,12 @@
       </v-sheet>
       <v-sheet height="600">
         <v-calendar ref="calendar" :event-detailed="true" v-model="value" :weekdays="weekday" :type="type"
-          :events="events" :event-overlap-mode="mode" :event-overlap-threshold="30" :event-color="getEventColor"
+          :events="filteredEvents" :event-overlap-mode="mode" :event-overlap-threshold="30" :event-color="getEventColor"
           @change="getEvents" @click:event="openModal($event, $event.nativeEvent.clientX, $event.nativeEvent.clientY)"
           @click:date="openAddEventForm($event)" class="calendar"></v-calendar>
       </v-sheet>
       <EventModal v-if="showModal" @eventUpdated="getEvents" @eventDeleted="getEvents" @closeModal="closeModal"
-        :eventData="selectedEvent" class="modal" :style="{ left: modalX, top: modalY }" />
+        :eventData="selectedEvent" class="modal"  />
       <div v-if="addEventModal" class="modal" style="z-index: 1;">
         <v-card elevation="20" style="display: flex">
           <div>
@@ -63,40 +69,8 @@
             </v-card-actions>
           </div>
           <div>
-            <div style="padding-right: 16px">
-              <v-card-title>Contacts</v-card-title>
-              <v-card-text
-                style="width: 400px; height: 250px; overflow-y: scroll; box-shadow: 0 0 5px rgba(0, 0, 0, 0.6); display: flex">
-                <div>
-                  <v-card-text>Existing Contacts</v-card-text>
-                  <v-list>
-                    <v-list-item v-for="(existingContact, index) in existingContacts" :key="index">
-                      <v-list-item-content>
-                        <v-list-item-title>{{ existingContact.name }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ existingContact.email }}</v-list-item-subtitle>
-                        <v-list-item-subtitle>{{ existingContact.phone }}</v-list-item-subtitle>
-                      </v-list-item-content>
-                      <v-list-item-action>
-                        <v-icon :disabled="eventContacts.includes(existingContact)" color="purple"
-                          @click="addContactToEvent(existingContact)">mdi-plus</v-icon>
-                      </v-list-item-action>
-                    </v-list-item>
-                  </v-list>
-                </div>
-                <div style="min-width: 120px;">
-                  <v-card-text>In this event</v-card-text>
-                  <v-list>
-                    <v-list-item v-for="(eventContact, index) in eventContacts" :key="index">
-                      <v-list-item-content>
-                        <v-list-item-title>{{ eventContact.name }}</v-list-item-title>
-                      </v-list-item-content>
-                      <!-- <v-icon color="green">mdi-check</v-icon> -->
-                      <v-icon color="red" @click="removeContactFromEvent(eventContact)">mdi-close</v-icon>
-                    </v-list-item>
-                  </v-list>
-                </div>
-              </v-card-text>
-            </div>
+            <EventContacts @event-contacts-updated="takeData" />
+            <Tags @tag-value="takeTag" />
           </div>
         </v-card>
       </div>
@@ -108,10 +82,14 @@
 import axios from '../api/axios-config';
 import Cookies from 'js-cookie';
 import EventModal from '../components/EventModal.vue';
+import EventContacts from '../components/EventContacts.vue';
+import Tags from '../components/Tags.vue';
 
 export default {
   components: {
-    EventModal
+    EventModal,
+    EventContacts,
+    Tags
   },
   data: () => ({
     type: 'month',
@@ -126,7 +104,6 @@ export default {
       { text: 'Mon, Wed, Fri', value: [1, 3, 5] },
     ],
     value: '',
-    events: [],
     showModal: false,
     selectedEvent: null,
     addEventModal: false,
@@ -139,36 +116,116 @@ export default {
       endTime: '',
       color: '',
     },
-    existingContacts: [],
-    eventContacts: [],
     selectedExistingContact: null,
+    eventContacts: [],
+    tags: [],
+    searchQuery: '',
+    events: [],
+    selectedContacts: [],
+    selectedTags: [],
+    contactsFilter: ['Leblanc', 'Irelia'],
+    tagsFilter: [],
   }),
-  methods: {
-    getEvents() {
-      const cookies = JSON.parse(Cookies.get('auth'));
-      const user_id = cookies.id;
+  created() {
+    const cookies = JSON.parse(Cookies.get('auth'));
+    const user_id = cookies.id;
 
-      axios.get(`/events/${user_id}`)
-        .then((response) => {
-          const events = response.data.events;
+    axios.get(`/users/${user_id}/contacts`)
+      .then(response => {
+        const namesArray = response.data.contacts.map(contact => contact.name);
+        this.contactsFilter = namesArray;
+      })
+      .catch(error => {
+        console.error('Error');
+      });
 
-          const formatedEvents = events.map((prop) => ({
-            id: prop.id,
-            name: prop.title,
-            description: prop.description,
-            start: new Date(prop.start_datetime),
-            end: new Date(prop.end_datetime),
-            color: prop.color,
-            timed: true
-          }));
 
-          this.events = formatedEvents;
-        })
-        .catch((error) => {
-          console.error('Error fetching events');
-        });
-      this.fetchContacts();
+    axios.get('/tags')
+      .then(response => {
+
+        const namesArray = response.data.tags.map(tag => tag.name);
+        this.tagsFilter = namesArray;
+      })
+      .catch(error => {
+        console.error('Erro ao buscar tags');
+      });
+
+  },
+  computed: {
+    filteredEvents() {
+      let filteredEvents = this.events.filter(eventInfo =>
+        eventInfo.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+      );
+
+      if (this.selectedContacts.length > 0) {
+        filteredEvents = filteredEvents.filter(eventInfo =>
+          this.selectedContacts.some(contact =>
+            eventInfo.contato_name && eventInfo.contato_name.includes(contact)
+          )
+        );
+      }
+
+      if (this.selectedTags.length > 0) {
+        filteredEvents = filteredEvents.filter(eventInfo =>
+          this.selectedTags.some(tag =>
+            eventInfo.tag_name && eventInfo.tag_name.includes(tag)
+          )
+        );
+      }
+
+      return filteredEvents;
     },
+  },
+  methods: {
+    formatDates(events) {
+      return events.map(info => {
+        info.start = new Date(info.start);
+        info.end = new Date(info.end);
+        info.timed = true;
+        return info;
+      });
+    },
+    takeData(data) {
+      this.eventContacts = data;
+    },
+    takeTag(data) {
+      this.tags = data;
+    },
+    getEvents() {
+  const cookies = JSON.parse(Cookies.get('auth'));
+  const user_id = cookies.id;
+
+  axios.get(`/all-events/${user_id}`).then(response => {
+    const events = this.formatDates(response.data.results);
+   
+    const consolidatedEvents = {};
+
+    events.forEach(event => {
+      if (!consolidatedEvents[event.id]) {
+        
+        consolidatedEvents[event.id] = { ...event, tags: [], contacts: [] };
+      }
+
+   
+      if (event.tags && Array.isArray(event.tags)) {
+      
+        consolidatedEvents[event.id].tags.push(...event.tags);
+      }
+
+    
+      if (event.contacts && Array.isArray(event.contacts)) {
+     
+        consolidatedEvents[event.id].contacts.push(...event.contacts);
+      }
+    });
+
+  
+    this.events = Object.values(consolidatedEvents);
+
+    console.log(this.events);
+  });
+},
+
     getEventColor(event) {
       return event.color
     },
@@ -178,7 +235,8 @@ export default {
       this.modalY = clientY + 'px';
 
       this.selectedEvent = event;
-
+      console.log(this.selectedEvent)
+      this.$store.commit('setSelectedEvent', this.selectedEvent);
       this.showModal = true;
     },
 
@@ -192,12 +250,13 @@ export default {
 
     closeEventModal() {
       this.addEventModal = false;
+      this.newEvent.start = null;
+      this.tags = [];
     },
 
     saveEvent() {
       const cookies = JSON.parse(Cookies.get('auth'));
       const user_id = cookies.id;
-
 
       const rawColor = this.newEvent.color;
       const colorWithoutAlpha = rawColor.substring(0, 7);
@@ -216,10 +275,20 @@ export default {
         .then((response) => {
           this.getEvents();
           this.closeEventModal();
+          this.saveContactToEvent(response.data.events.id);
+          this.addTagToEvent(response.data.events.id);
         })
         .catch((error) => {
-          console.error('Error');
+          console.error('Error', error);
         });
+
+        this.newEvent.name = '',
+        this.newEvent.description = '',
+        this.newEvent.start = null,
+        this.newEvent.end = null,
+        this.newEvent.startTime = '',
+        this.newEvent.endTime = '',
+        this.newEvent.color = ''
     },
 
     combineDateTime(date, time) {
@@ -232,33 +301,39 @@ export default {
       this.openAddEventModal();
     },
 
-    fetchContacts() {
-      const cookies = JSON.parse(Cookies.get('auth'));
-      const user_id = cookies.id;
+    saveContactToEvent(eventId) {
+      const event_id = eventId;
 
-      axios.get(`/users/${user_id}/contacts`)
-        .then(response => {
-          this.existingContacts = response.data.contacts;
-        })
-        .catch(error => {
-          console.error('Error fetching contacts');
-        });
+      this.eventContacts.forEach(contact => {
+        const eventData = {
+          contact_id: contact.id,
+          event_id: event_id
+        };
+        axios.post('/event-contact', eventData)
+          .then(response => {
+            console.log(response.data);
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      });
     },
-    addContactToEvent(existingContact) {
-      if (!this.eventContacts.includes(existingContact)) {
-        this.eventContacts.push(existingContact);
+    addTagToEvent(event) {
 
-        this.selectedExistingContact = null;
-      }
+      this.tags.forEach(tag => {
+        const data = {
+          tag_id: tag.id,
+          event_id: event,
+        }
+        axios.post('/tag-event', data)
+          .then(response => {
+            console.log(response);
+          })
+          .catch(error => {
+            console.error(error);
+          })
+      })
     },
-
-    removeContactFromEvent(eventContact) {
-      const index = this.eventContacts.findIndex(contact => contact === eventContact);
-
-      if (index !== -1) {
-        this.eventContacts.splice(index, 1);
-      }
-    }
   },
 }
 </script>

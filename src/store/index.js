@@ -7,6 +7,8 @@ export default new Vuex.Store({
   state: {
     token: '',
     imageBase64: '',
+    createdEventId: null,
+    selectedEvent: null,
     user: {
       id: '',
       name: '',
@@ -27,6 +29,14 @@ export default new Vuex.Store({
 
     setImageBase64(state, imageBase64) {
       state.imageBase64 = imageBase64;
+    },
+
+    setCreatedEventId(state, createdEventId) {
+      state.createdEventId = createdEventId;
+    },
+
+    setSelectedEvent(state, selectedEvent) {
+      state.selectedEvent = selectedEvent;
     },
   },
   actions: {

@@ -1,6 +1,6 @@
 <template>
-    <v-app>
-        <v-card width="400" :style="{ backgroundColor: eventData.event.color }" style="z-index: 1;">
+    <v-app style="z-index: 1; height: 300px;">
+        <v-card :style="{ backgroundColor: eventData.event.color }" style="z-index: 1;">
             <div v-if="!editingMode">
                 <v-card-title>
                     Event Details
@@ -32,48 +32,56 @@
                         <v-list-item>
                             <v-list-item-content>
                                 <v-list-item-title>Start</v-list-item-title>
-                                <v-list-item-subtitle>{{ formatDate(this.eventData.event.start) + ' ' + this.editedEvent.startTime }}</v-list-item-subtitle>
+                                <v-list-item-subtitle>{{ formatDate(this.eventData.event.start) + ' ' +
+                                    this.editedEvent.startTime }}</v-list-item-subtitle>
                             </v-list-item-content>
                         </v-list-item>
                         <v-list-item>
                             <v-list-item-content>
                                 <v-list-item-title>End</v-list-item-title>
-                                <v-list-item-subtitle>{{ formatDate(this.eventData.event.end) + ' ' + this.editedEvent.endTime }}</v-list-item-subtitle>
+                                <v-list-item-subtitle>{{ formatDate(this.eventData.event.end) + ' ' +
+                                    this.editedEvent.endTime }}</v-list-item-subtitle>
                             </v-list-item-content>
                         </v-list-item>
                     </v-list>
                 </v-card-text>
             </div>
-            <v-card v-else>
-                <v-card-text>
-                    <v-form>
-                        <v-text-field label="Name" v-model="editedEvent.name"></v-text-field>
-                        <v-textarea label="Descrição do Evento" v-model="editedEvent.description"></v-textarea>
-                        <div style="display: flex; gap: 20px;">
-                            <div>
-                                <label>Start Date</label>
-                                <br>
-                                <input type="date" label="Data de Início" v-model="editedEvent.start">
-                                <label>Start Time</label>
-                                <br>
-                                <input type="time" label="Hora de Início" v-model="editedEvent.startTime">
+            <v-card v-else style="display: flex;">
+                <div>
+                    <v-card-text>
+                        <v-form>
+                            <v-text-field label="Name" v-model="editedEvent.name"></v-text-field>
+                            <v-textarea label="Descrição do Evento" v-model="editedEvent.description"></v-textarea>
+                            <div style="display: flex; gap: 20px;">
+                                <div>
+                                    <label>Start Date</label>
+                                    <br>
+                                    <input type="date" label="Data de Início" v-model="editedEvent.start">
+                                    <label>Start Time</label>
+                                    <br>
+                                    <input type="time" label="Hora de Início" v-model="editedEvent.startTime">
+                                </div>
+                                <div>
+                                    <label>End Date</label>
+                                    <br>
+                                    <input type="date" label="Data de Término" v-model="editedEvent.end">
+                                    <label>End Time</label>
+                                    <br>
+                                    <input type="time" label="Hora de Término" v-model="editedEvent.endTime">
+                                </div>
                             </div>
-                            <div>
-                                <label>End Date</label>
-                                <br>
-                                <input type="date" label="Data de Término" v-model="editedEvent.end">
-                                <label>End Time</label>
-                                <br>
-                                <input type="time" label="Hora de Término" v-model="editedEvent.endTime">
-                            </div>
-                        </div>
-                        <v-color-picker v-model="editedEvent.color" label="Cor do Evento"></v-color-picker>
+                            <v-color-picker v-model="editedEvent.color" label="Cor do Evento"></v-color-picker>
 
-                        <v-btn @click="editEvent">Update</v-btn>
-                        <v-btn @click="cancelEdit">Cancel</v-btn>
-                        <p style="color: green; margin-top: 10px; font-size: 20px;">{{ message }}</p>
-                    </v-form>
-                </v-card-text>
+                            <v-btn @click="editEvent">Update</v-btn>
+                            <v-btn @click="cancelEdit">Cancel</v-btn>
+                            <p style="color: green; margin-top: 10px; font-size: 20px;">{{ message }}</p>
+                        </v-form>
+                    </v-card-text>
+                </div>
+                <div>
+                    <EventContacts @event-contacts-updated="takeData" />
+                    <Tags @tag-value="takeTag" />
+                </div>
             </v-card>
         </v-card>
     </v-app>
@@ -81,10 +89,16 @@
   
 <script>
 import axios from '../api/axios-config';
+import EventContacts from '../components/EventContacts.vue';
+import Tags from '../components/Tags.vue';
 
 export default {
     props: {
         eventData: Object,
+    },
+    components: {
+        EventContacts,
+        Tags
     },
     data() {
         return {
@@ -94,7 +108,9 @@ export default {
                 endTime: '',
             },
             editingMode: false,
-            message: ''
+            message: '',
+            eventContacts: [],
+            tags: [],
         };
     },
     mounted() {
@@ -104,6 +120,12 @@ export default {
         this.editedEvent.endTime = this.formatTime(this.eventData.event.end);
     },
     methods: {
+        takeData(data) {
+            this.eventContacts = data;
+        },
+        takeTag(data) {
+            this.tags = data;
+        },
         formatDate(dateString) {
             const date = new Date(dateString);
             return date.toISOString().substr(0, 10);
@@ -137,6 +159,8 @@ export default {
                 .catch((error) => {
                     console.error('Error');
                 });
+            this.saveContactToEvent(this.editedEvent.id);
+            this.addTagToEvent(this.editedEvent.id);
         },
         setEditingMode() {
             this.editingMode = true;
@@ -154,10 +178,46 @@ export default {
                     this.$emit('eventDeleted', response.data);
                     this.closeModal();
                 })
-        }
+        },
+        saveContactToEvent(eventId) {
+            const event_id = eventId;
+
+            this.eventContacts.forEach(contact => {
+                const eventData = {
+                    contact_id: contact.id,
+                    event_id: event_id
+                };
+                axios.post('/event-contact', eventData)
+                    .then(response => {
+                        console.log(response.data);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            });
+        },
+        addTagToEvent(event) {
+            this.tags.forEach(tag => {
+                const data = {
+                    tag_id: tag.id,
+                    event_id: event,
+                }
+                axios.post('/tag-event', data)
+                    .then(response => {
+                        console.log(response);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    })
+            })
+        },
     },
 };
 </script>
   
-<style scoped></style>
+<style scoped>
+.edit-modal {
+    
+}
+</style>
   
