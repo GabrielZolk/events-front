@@ -16,6 +16,7 @@
                     </v-btn>
                 </v-card-title>
                 <v-card-text>
+                    <p style="color: blue; margin-top: 10px; font-size: 10px; max-width: 200px;">{{ status }}</p>
                     <v-list>
                         <v-list-item>
                             <v-list-item-content>
@@ -111,6 +112,7 @@ export default {
             message: '',
             eventContacts: [],
             tags: [],
+            status: '',
         };
     },
     mounted() {
@@ -175,8 +177,15 @@ export default {
             axios
                 .delete(`/events/${this.eventData.event.id}`)
                 .then((response) => {
-                    this.$emit('eventDeleted', response.data);
-                    this.closeModal();
+                    if (response.data.error && response.data.error.includes('Failed')) {
+                        this.status = 'To remove an event, you must first remove all participants and tags';
+                    } else {
+                        this.$emit('eventDeleted', response.data);
+                        this.message = "Deleted!"
+                        setTimeout(() => {
+                            this.closeModal();
+                        }, 2000)
+                    }
                 })
         },
         saveContactToEvent(eventId) {

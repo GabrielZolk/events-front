@@ -12,10 +12,10 @@
           class="ma-2"></v-select>
         <v-text-field v-model="searchQuery" label="Search"></v-text-field>
         <v-autocomplete v-model="selectedContacts" :items="contactsFilter" label="Filter by contact" multiple chips
-        small-chips dense></v-autocomplete>
+          small-chips dense></v-autocomplete>
 
-      <v-autocomplete v-model="selectedTags" :items="tagsFilter" label="Filter by tag" multiple chips small-chips
-        dense></v-autocomplete>
+        <v-autocomplete v-model="selectedTags" :items="tagsFilter" label="Filter by tag" multiple chips small-chips
+          dense></v-autocomplete>
         <v-btn icon class="ma-2 add" @click="openAddEventModal">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
@@ -31,7 +31,7 @@
           @click:date="openAddEventForm($event)" class="calendar"></v-calendar>
       </v-sheet>
       <EventModal v-if="showModal" @eventUpdated="getEvents" @eventDeleted="getEvents" @closeModal="closeModal"
-        :eventData="selectedEvent" class="modal"  />
+        :eventData="selectedEvent" class="modal" :style="{ left: modalX, top: modalY }" />
       <div v-if="addEventModal" class="modal" style="z-index: 1;">
         <v-card elevation="20" style="display: flex">
           <div>
@@ -192,39 +192,36 @@ export default {
       this.tags = data;
     },
     getEvents() {
-  const cookies = JSON.parse(Cookies.get('auth'));
-  const user_id = cookies.id;
+      const cookies = JSON.parse(Cookies.get('auth'));
+      const user_id = cookies.id;
 
-  axios.get(`/all-events/${user_id}`).then(response => {
-    const events = this.formatDates(response.data.results);
-   
-    const consolidatedEvents = {};
+      axios.get(`/all-events/${user_id}`).then(response => {
+        const events = this.formatDates(response.data.results);
 
-    events.forEach(event => {
-      if (!consolidatedEvents[event.id]) {
-        
-        consolidatedEvents[event.id] = { ...event, tags: [], contacts: [] };
-      }
+        const consolidatedEvents = {};
 
-   
-      if (event.tags && Array.isArray(event.tags)) {
-      
-        consolidatedEvents[event.id].tags.push(...event.tags);
-      }
+        events.forEach(event => {
+          if (!consolidatedEvents[event.id]) {
 
-    
-      if (event.contacts && Array.isArray(event.contacts)) {
-     
-        consolidatedEvents[event.id].contacts.push(...event.contacts);
-      }
-    });
+            consolidatedEvents[event.id] = { ...event, tags: [], contacts: [] };
+          }
 
-  
-    this.events = Object.values(consolidatedEvents);
 
-    console.log(this.events);
-  });
-},
+          if (event.tags && Array.isArray(event.tags)) {
+
+            consolidatedEvents[event.id].tags.push(...event.tags);
+          }
+
+
+          if (event.contacts && Array.isArray(event.contacts)) {
+
+            consolidatedEvents[event.id].contacts.push(...event.contacts);
+          }
+        });
+
+        this.events = Object.values(consolidatedEvents);
+      });
+    },
 
     getEventColor(event) {
       return event.color
@@ -235,7 +232,7 @@ export default {
       this.modalY = clientY + 'px';
 
       this.selectedEvent = event;
-      console.log(this.selectedEvent)
+
       this.$store.commit('setSelectedEvent', this.selectedEvent);
       this.showModal = true;
     },
@@ -282,7 +279,7 @@ export default {
           console.error('Error', error);
         });
 
-        this.newEvent.name = '',
+      this.newEvent.name = '',
         this.newEvent.description = '',
         this.newEvent.start = null,
         this.newEvent.end = null,
