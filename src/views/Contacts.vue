@@ -15,6 +15,7 @@
       <v-row justify="center">
         <v-col cols="12" sm="8" md="6">
           <v-card v-if="contacts.length > 0">
+            <p style="color: blue; text-align: center;">{{ message }}</p>
             <v-card-title>Contacts List</v-card-title>
             <v-list>
               <v-list-item v-for="(contact, index) in filteredContacts" :key="index">
@@ -33,7 +34,7 @@
                     <v-icon color="primary">mdi-pencil</v-icon>
                   </v-btn>
                   <div v-else>
-                    <v-btn icon @click="() => { editingContactId = null }" >
+                    <v-btn icon @click="() => { editingContactId = null }">
                       <v-icon color="error">mdi-close</v-icon>
                     </v-btn>
                     <v-btn icon @click="updateContact(contact)">
@@ -96,6 +97,7 @@ export default {
       contacts: [],
       editingState: false,
       editingContactId: null,
+      message: ''
     };
   },
   created() {
@@ -168,13 +170,17 @@ export default {
       axios
         .delete(`/contacts/${contactId}`)
         .then(response => {
-          const index = this.contacts.findIndex(contact => contact.id === contactId);
+          if (response.data.error && response.data.error.includes('Failed')) {
+            this.message = 'This contact is being used in an existing event';
+          } else {
+            const index = this.contacts.findIndex(contact => contact.id === contactId);
           if (index !== -1) {
             this.contacts.splice(index, 1);
           }
+          }
         })
         .catch(error => {
-          console.error('Error deleting contact');
+          console.error('Error deleting contact', error);
         });
     },
   },
