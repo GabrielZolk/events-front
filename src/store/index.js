@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import axios from '../api/axios-config';
 
 Vue.use(Vuex)
 
@@ -9,6 +10,8 @@ export default new Vuex.Store({
     imageBase64: '',
     createdEventId: null,
     selectedEvent: null,
+    contactsFilter: [],
+    tagsFilter: [],
     user: {
       id: '',
       name: '',
@@ -38,8 +41,37 @@ export default new Vuex.Store({
     setSelectedEvent(state, selectedEvent) {
       state.selectedEvent = selectedEvent;
     },
+
+    setContactsFilter(state, contactsFilter) {
+      state.contactsFilter = contactsFilter;
+    },
+
+    setTagsFilter(state, tagsFilter) {
+      state.tagsFilter = tagsFilter;
+    }
   },
   actions: {
+    getContactsFilter({ commit }, user_id) {
+      axios.get(`/users/${user_id}/contacts`)
+      .then(response => {
+        const namesArray = response.data.contacts.map(contact => contact.name);
+        commit('setContactsFilter', namesArray);
+      })
+      .catch(error => {
+        console.error('Error fetching contacts filter');
+      });
+    },
+
+    getTagsFilter({ commit }) {
+      axios.get('/tags')
+      .then(response => {
+        const namesArray = response.data.tags.map(tag => tag.name);
+        commit('setTagsFilter', namesArray);
+      })
+      .catch(error => {
+        console.error('Error fetching tasks filter');
+      });
+    }
   },
   modules: {
   }

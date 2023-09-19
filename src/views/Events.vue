@@ -11,10 +11,10 @@
         <v-select v-model="weekday" :items="weekdays" dense outlined hide-details label="weekdays"
           class="ma-2"></v-select>
         <v-text-field v-model="searchQuery" label="Search"></v-text-field>
-        <v-autocomplete v-model="selectedContacts" :items="contactsFilter" label="Filter by contact" multiple chips
+        <v-autocomplete v-model="selectedContacts" :items="$store.state.contactsFilter" label="Filter by contact" multiple chips
           small-chips dense></v-autocomplete>
 
-        <v-autocomplete v-model="selectedTags" :items="tagsFilter" label="Filter by tag" multiple chips small-chips
+        <v-autocomplete v-model="selectedTags" :items="$store.state.tagsFilter" label="Filter by tag" multiple chips small-chips
           dense></v-autocomplete>
         <v-btn icon class="ma-2 add" @click="openAddEventModal">
           <v-icon>mdi-plus</v-icon>
@@ -123,33 +123,13 @@ export default {
     events: [],
     selectedContacts: [],
     selectedTags: [],
-    contactsFilter: ['Leblanc', 'Irelia'],
-    tagsFilter: [],
   }),
   created() {
     const cookies = JSON.parse(Cookies.get('auth'));
     const user_id = cookies.id;
 
-    axios.get(`/users/${user_id}/contacts`)
-      .then(response => {
-        const namesArray = response.data.contacts.map(contact => contact.name);
-        this.contactsFilter = namesArray;
-      })
-      .catch(error => {
-        console.error('Error');
-      });
-
-
-    axios.get('/tags')
-      .then(response => {
-
-        const namesArray = response.data.tags.map(tag => tag.name);
-        this.tagsFilter = namesArray;
-      })
-      .catch(error => {
-        console.error('Erro ao buscar tags');
-      });
-
+    this.$store.dispatch('getContactsFilter', user_id);
+    this.$store.dispatch('getTagsFilter');
   },
   computed: {
     filteredEvents() {
