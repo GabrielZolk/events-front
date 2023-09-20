@@ -12,6 +12,7 @@ export default new Vuex.Store({
     selectedEvent: null,
     contactsFilter: [],
     tagsFilter: [],
+    searchQuery: '',
     user: {
       id: '',
       name: '',
@@ -73,6 +74,7 @@ export default new Vuex.Store({
       });
     }
   },
+  
   modules: {
   }
 })

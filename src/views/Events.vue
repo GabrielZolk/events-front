@@ -10,7 +10,7 @@
           class="ma-2"></v-select> -->
         <v-select v-model="weekday" :items="weekdays" dense outlined hide-details label="weekdays"
           class="ma-2"></v-select>
-        <v-text-field v-model="searchQuery" label="Search"></v-text-field>
+        <v-text-field v-model="$store.state.searchQuery" label="Search"></v-text-field>
         <v-autocomplete v-model="selectedContacts" :items="$store.state.contactsFilter" label="Filter by contact" multiple chips
           small-chips dense></v-autocomplete>
 
@@ -119,7 +119,6 @@ export default {
     selectedExistingContact: null,
     eventContacts: [],
     tags: [],
-    searchQuery: '',
     events: [],
     selectedContacts: [],
     selectedTags: [],
@@ -134,7 +133,7 @@ export default {
   computed: {
     filteredEvents() {
       let filteredEvents = this.events.filter(eventInfo =>
-        eventInfo.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+        eventInfo.name.toLowerCase().includes(this.$store.state.searchQuery.toLowerCase())
       );
 
       if (this.selectedContacts.length > 0) {

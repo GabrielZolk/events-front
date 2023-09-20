@@ -61,7 +61,7 @@ export default {
                 }
 
                 if (token) {
-                    Cookies.set('auth', JSON.stringify(userData), { expires: 7 });
+                    Cookies.set('auth', JSON.stringify(userData), { expires: 1 });
                     this.$store.commit('setToken', token);
                     this.$store.commit('setUser', user);
                     this.$router.push('/');
